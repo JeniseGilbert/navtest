@@ -72,26 +72,37 @@
       width: auto;
       min-width: 150px;
       border-radius: 8px;
-      box-shadow: 0 0 10px var(--sage);
+      box-shadow: 0 0 10px var(--cream);
     }
 
-    #myLinks a {
-      color: var(--sage);
-      padding: 12px 16px;
-      text-decoration: none;
-      font-size: 17px;
+    #myLinks.show {
       display: block;
+    }
+    
+    #myLinks a {
+      color: var(--cream);
+      padding: 12px 20px;
+      text-decoration: none;
+      font-size: 18px;
       font-family: 'Cinzel', serif;
+      display: block;
+      transition: color 0.3s ease, text-shadow 0.3s ease, transform 0.3s ease;
+      text-align: right;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     #myLinks a:hover {
-      background-color: var(--sage);
-      color: white;
+      background-color: transparent;
+      color: var(--cream);
+      text-shadow: 0 0 60px var(--cream);
+      transform: scale(1.05);
     }
     
-    #myLinks.show {
-  display: block;
-}
+    #myLinks a.active {
+      color: var(--cream);
+      animation: pulseGlow 5s infinite;
+      font-weight: bold;
+    }
 
 
     @media (min-width: 769px) {
@@ -319,12 +330,12 @@
       <input type="text" name="firstName" required>
       <label>Last Name</label>
       <input type="text" name="lastName" required>
-      <label>Will you attend?</label>
+      <label>Are you able to attend?</label>
       <div class="radio-group">
         <label class="radio-option"><input type="radio" name="attendance" value="Yes" required> Yes</label>
         <label class="radio-option"><input type="radio" name="attendance" value="No"> No</label>
       </div>
-      <button type="button" onclick="handleFirstPage()">Next</button>
+      <button type="button" onclick="handleFirstPage()" disabled>>Next</button>
     </div>
  
     <div id="page2" class="hidden">
@@ -360,7 +371,7 @@
 
       <div id="guestFields"></div>
       <button type="button" class="back-button" onclick="goBackToPage1()">Back</button>
-      <button type="submit">Submit</button>
+      <button type="submit" disabled>Submit</button>
     </div>
     
   
@@ -429,141 +440,189 @@
   </div>
   <!-- Near the bottom of your HTML, inside the <script> tag -->
 <script>
-  function handleFirstPage() {
-    const attendance = document.querySelector('input[name="attendance"]:checked')?.value;
-    const firstName = document.querySelector('input[name="firstName"]').value;
-    const lastName = document.querySelector('input[name="lastName"]').value;
+  document.addEventListener("DOMContentLoaded", () => {
+    function handleFirstPage() {
+      const attendanceInput = document.querySelector('input[name="attendance"]:checked');
+      const firstNameInput = document.querySelector('input[name="firstName"]');
+      const lastNameInput = document.querySelector('input[name="lastName"]');
+      if (!firstNameInput || !lastNameInput) return;
 
-    if (attendance === "Yes") {
-      document.getElementById("page1").classList.add("hidden");
-      document.getElementById("page2").classList.remove("hidden");
-    } else {
-      submitForm({ firstName, lastName, attendance });
-    }
-  }
+      const firstName = firstNameInput.value.trim();
+      const lastName = lastNameInput.value.trim();
 
-  function submitForm(data) {
-    document.getElementById("page1").classList.add("hidden");
-    document.getElementById("loading").classList.remove("hidden");
+      if (!attendanceInput || !firstName || !lastName) return;
 
-    google.script.run
-      .withSuccessHandler(() => {
-        document.getElementById("loading").classList.add("hidden");
-        document.getElementById("sorry").classList.remove("hidden");
-      })
-      .withFailureHandler(() => {
-        document.getElementById("loading").classList.add("hidden");
-        alert("Something went wrong. Please try again later.");
-      })
-      .submitRSVP(data);
-  }
+      const attendance = attendanceInput.value;
 
-  function renderGuestFields(count) {
-    const container = document.getElementById("guestFields");
-    container.innerHTML = '';
-    for (let i = 1; i <= count; i++) {
-      container.innerHTML += `
-        <div class="guest-section">
-          <h4>Guest ${i}</h4>
-          <label>Name</label>
-          <input type="text" name="guestName${i}" required>
-          <label>Entree</label>
-          <select name="guestMeal${i}">
-            <option value="" disabled selected>-- Select an entree --</option>
-            <option>Oxtail</option>
-            <option>Curry Goat</option>
-            <option>Stew Chicken</option>
-            <option>Salmon (reserved for pescatarian guests)</option>
-            <option>No entree</option>
-          </select>
-          <label>Rice</label>
-          <select name="guestRice${i}">
-            <option value="" disabled selected>-- Select a rice option --</option>
-            <option>Rice and Peas</option>
-            <option>Plain White Rice</option>
-            <option>No Rice</option>
-          </select>
-          <label>Vegetables</label>
-          <select name="guestVegetable${i}">
-            <option value="" disabled selected>-- Select a vegetable option --</option>
-            <option>Cabbage, carrots, and green beans</option>
-            <option>No vegetables</option>
-          </select>
-        </div>
-      `;
-    }
-  }
-
-  document.getElementById("rsvpForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    document.getElementById("loading").classList.remove("hidden");
-
-    const form = e.target;
-    const guestCount = parseInt(form.guestCount?.value || 0);
-    const data = {
-      firstName: form.firstName?.value || '',
-      lastName: form.lastName?.value || '',
-      attendance: form.attendance?.value || '',
-      phone: form.phone?.value || '',
-      meal: form.meal?.value || '',
-      side: form.rice?.value || '',
-      vegetables: form.vegetables?.value || '',
-      guests: guestCount,
-      guestMealPreferences: []
-    };
-
-    for (let i = 1; i <= guestCount; i++) {
-      data.guestMealPreferences.push({
-        guestName: form['guestName' + i]?.value || '',
-        guestMeal: form['guestMeal' + i]?.value || '',
-        guestRice: form['guestRice' + i]?.value || '',
-        guestVegetable: form['guestVegetable' + i]?.value || ''
-      });
+      if (attendance === "Yes") {
+        document.getElementById("page1").classList.add("hidden");
+        document.getElementById("page2").classList.remove("hidden");
+      } else {
+        submitForm({ firstName, lastName, attendance });
+      }
     }
 
-    google.script.run
-      .withSuccessHandler(() => {
-        document.getElementById("loading").classList.add("hidden");
-        document.getElementById("page2").classList.add("hidden");
-        document.getElementById("thankYou").classList.remove("hidden");
-      })
-      .withFailureHandler(() => {
-        document.getElementById("loading").classList.add("hidden");
-        alert("Something went wrong. Please try again later.");
-      })
-      .submitRSVP(data);
-  });
+    function validatePage1Inputs() {
+      const firstNameInput = document.querySelector('input[name="firstName"]');
+      const lastNameInput = document.querySelector('input[name="lastName"]');
+      const attendanceChecked = document.querySelector('input[name="attendance"]:checked');
+      const nextButton = document.getElementById("nextButton");
 
-  function saveFormToLocalStorage() {
-    const formData = new FormData(document.getElementById("rsvpForm"));
-    const data = {};
-    formData.forEach((value, key) => {
-      data[key] = value;
-    });
-    localStorage.setItem("rsvpFormData", JSON.stringify(data));
-  }
+      if (!firstNameInput || !lastNameInput || !nextButton) return;
 
-  function loadFormFromLocalStorage() {
-    const savedData = JSON.parse(localStorage.getItem("rsvpFormData"));
-    if (savedData) {
-      Object.keys(savedData).forEach(key => {
-        const input = document.querySelector(`[name="${key}"]`);
-        if (input) {
-          input.value = savedData[key];
-          if (input.type === 'radio' && input.value === savedData[key]) {
-            input.checked = true;
-          }
+      const firstName = firstNameInput.value.trim();
+      const lastName = lastNameInput.value.trim();
+
+      nextButton.disabled = !(firstName && lastName && attendanceChecked);
+    }
+
+    function validatePage2Inputs() {
+      const form = document.getElementById("rsvpForm");
+      if (!form) return;
+
+      const submitButton = form.querySelector("button[type='submit']");
+      if (!submitButton) return;
+
+      const phone = form.phone?.value.trim();
+      const meal = form.meal?.value;
+      const rice = form.rice?.value;
+      const vegetables = form.vegetables?.value;
+      const guestCountRaw = form.guestCount?.value;
+
+      if (guestCountRaw === "" || guestCountRaw === null || guestCountRaw === undefined) {
+        submitButton.disabled = true;
+        return;
+      }
+
+      let valid = phone && meal && rice && vegetables;
+      const guestCount = parseInt(guestCountRaw || 0);
+
+      for (let i = 1; i <= guestCount; i++) {
+        const gName = form[`guestName${i}`]?.value.trim();
+        const gMeal = form[`guestMeal${i}`]?.value;
+        const gRice = form[`guestRice${i}`]?.value;
+        const gVeg = form[`guestVegetable${i}`]?.value;
+        if (!(gName && gMeal && gRice && gVeg)) {
+          valid = false;
+          break;
         }
-      });
+      }
+
+      submitButton.disabled = !valid;
+    
     }
-  }
 
-  document.addEventListener("input", saveFormToLocalStorage);
-  window.addEventListener("DOMContentLoaded", loadFormFromLocalStorage);
+    function renderGuestFields(count) {
+      const container = document.getElementById("guestFields");
+      container.innerHTML = '';
+      count = parseInt(count) || 0;
+      for (let i = 1; i <= count; i++) {
+        container.innerHTML += `
+          <div class="guest-section">
+            <h4>Guest ${i}</h4>
+            <label>Name</label>
+            <input type="text" name="guestName${i}" required>
+            <label>Entree</label>
+            <select name="guestMeal${i}">
+              <option value="" disabled selected>-- Select an entree --</option>
+              <option>Oxtail</option>
+              <option>Curry Goat</option>
+              <option>Stew Chicken</option>
+              <option>Salmon (reserved for pescatarian guests)</option>
+              <option>No entree</option>
+            </select>
+            <label>Rice</label>
+            <select name="guestRice${i}">
+              <option value="" disabled selected>-- Select a rice option --</option>
+              <option>Rice and Peas</option>
+              <option>Plain White Rice</option>
+              <option>No Rice</option>
+            </select>
+            <label>Vegetables</label>
+            <select name="guestVegetable${i}">
+              <option value="" disabled selected>-- Select a vegetable option --</option>
+              <option>Cabbage, carrots, and green beans</option>
+              <option>No vegetables</option>
+            </select>
+          </div>
+        `;
+      }
+      validatePage2Inputs();
+    }
 
+    function goBackToPage1() {
+      document.getElementById("page2").classList.add("hidden");
+      document.getElementById("page1").classList.remove("hidden");
+    }
+
+    function submitForm(data) {
+      document.getElementById("page1")?.classList.add("hidden");
+      document.getElementById("page2")?.classList.add("hidden");
+      document.getElementById("thankYou")?.classList.add("hidden");
+      document.getElementById("sorry")?.classList.add("hidden");
+      document.getElementById("loading")?.classList.remove("hidden");
+
+      // Simulate async save or real API call
+      setTimeout(() => {
+        document.getElementById("loading")?.classList.add("hidden");
+        if (data.attendance === "No") {
+          document.getElementById("sorry").classList.remove("hidden");
+        } else {
+          document.getElementById("thankYou").classList.remove("hidden");
+        }
+      }, 1500);
+    }
+
+    document.getElementById("rsvpForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const form = e.target;
+      const guestCount = parseInt(form.guestCount?.value || 0);
+      const data = {
+        firstName: form.firstName?.value || '',
+        lastName: form.lastName?.value || '',
+        attendance: form.attendance?.value || '',
+        phone: form.phone?.value || '',
+        meal: form.meal?.value || '',
+        side: form.rice?.value || '',
+        vegetables: form.vegetables?.value || '',
+        guests: guestCount,
+        guestMealPreferences: []
+      };
+
+      for (let i = 1; i <= guestCount; i++) {
+        data.guestMealPreferences.push({
+          guestName: form[`guestName${i}`]?.value || '',
+          guestMeal: form[`guestMeal${i}`]?.value || '',
+          guestRice: form[`guestRice${i}`]?.value || '',
+          guestVegetable: form[`guestVegetable${i}`]?.value || ''
+        });
+      }
+
+      submitForm(data);
+    });
+
+    document.querySelectorAll('input[name="firstName"], input[name="lastName"], input[name="attendance"]').forEach(input => {
+      input.addEventListener("input", validatePage1Inputs);
+      input.addEventListener("change", validatePage1Inputs);
+    });
+
+    document.addEventListener("input", (e) => {
+      if (!document.getElementById("page2").classList.contains("hidden")) {
+        validatePage2Inputs();
+      }
+    });
+
+    validatePage1Inputs();
+    validatePage2Inputs();
+
+    window.handleFirstPage = handleFirstPage;
+    window.renderGuestFields = renderGuestFields;
+    window.goBackToPage1 = goBackToPage1;
+  });
+  
   function myFunction() {
-    const menu = document.getElementById("myLinks");
-    menu.classList.toggle("show");
+    const links = document.getElementById("myLinks");
+    links.classList.toggle("show");
   }
 </script>
 
